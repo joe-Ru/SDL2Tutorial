@@ -1,0 +1,18 @@
+﻿  main.cpp
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(34,2): warning C4091: 'typedef ': ignored on left of 'Delegate' when no variable is declared
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(43,2): warning C4091: 'typedef ': ignored on left of 'App' when no variable is declared
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(48,2): warning C4091: 'typedef ': ignored on left of 'Stage' when no variable is declared
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(203,11): error C2039: 'up': is not a member of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(37): message : see declaration of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(206,11): error C2039: 'down': is not a member of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(37): message : see declaration of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(209,11): error C2039: 'left': is not a member of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(37): message : see declaration of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(212,11): error C2039: 'right': is not a member of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(37): message : see declaration of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(215,11): error C2039: 'fire': is not a member of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(37): message : see declaration of 'App'
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(230,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(230,30): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(233,41): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\gabriel\source\repos\CyborgBattle\main.cpp(233,31): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
