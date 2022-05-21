@@ -15,6 +15,8 @@
 
 #define MAX_KEYBOARD_KEYS 350
 
+typedef struct Entity Entity; 
+
 struct Entity {
 	float x;
 	float y;
@@ -50,9 +52,10 @@ typedef struct Stage {
 
 
 // ------- ENTITY DECLARATIONS ------- 
-struct Entity player;
-struct Entity bullet;
+static Entity *player;
+static SDL_Texture* bulletTexture;
 struct App app;
+struct Stage stage;
 // ----------------------------------- 
 
 
@@ -172,70 +175,284 @@ void blit(SDL_Texture* texture, int x, int y) {
 	SDL_RenderCopy(app.renderer, texture, NULL, &dest);
 }
 
+static void fireBullet(void)
+{
+	Entity* bullet;
+
+	bullet = (Entity *)malloc(sizeof(Entity));
+	memset(bullet, 0, sizeof(Entity));
+	stage.bulletTail->next = bullet;
+	stage.bulletTail = bullet;
+
+	bullet->x = player->x;
+	bullet->y = player->y;
+	bullet->dx = PLAYER_BULLET_SPEED;
+	bullet->health = 1;
+	bullet->texture = bulletTexture;
+	SDL_QueryTexture(bullet->texture, NULL, NULL, &bullet->w, &bullet->h);
+
+	bullet->y += (player->h / 2) - (bullet->h / 2);
+
+	player->reload = 8;
+}
+
+
+
+static void doPlayer(void) {
+	player->dx = player->dy = 0;
+
+	if (player->reload > 0)
+	{
+		player->reload--;
+	}
+
+	if (app.keyboard[SDL_SCANCODE_UP])
+	{
+		player->dy = -PLAYER_SPEED;
+	}
+
+	if (app.keyboard[SDL_SCANCODE_DOWN])
+	{
+		player->dy = PLAYER_SPEED;
+	}
+
+	if (app.keyboard[SDL_SCANCODE_LEFT])
+	{
+		player->dx = -PLAYER_SPEED;
+	}
+
+	if (app.keyboard[SDL_SCANCODE_RIGHT])
+	{
+		player->dx = PLAYER_SPEED;
+	}
+
+	if (app.keyboard[SDL_SCANCODE_LCTRL] && player->reload == 0)
+	{
+		fireBullet();
+	}
+
+	player->x += player->dx;
+	player->y += player->dy;
+
+}
+
+
+static void drawPlayer(void) {
+	blit(player->texture, player->x, player->y);
+}
+static void drawBullets(void)
+{
+	Entity* b;
+
+	for (b = stage.bulletHead.next; b != NULL; b = b->next)
+	{
+		blit(b->texture, b->x, b->y);
+	}
+}
+
+static void draw(void) {
+	drawPlayer();
+	drawBullets();
+}
+
+
+
+
+
+
+static void doBullets(void) {
+	Entity* b, * prev;
+
+	prev = &stage.bulletHead;
+
+	for (b = stage.bulletHead.next; b != NULL; b = b->next)
+	{
+		b->x += b->dx;
+		b->y += b->dy;
+
+		if (b->x > SCREEN_WIDTH)
+		{
+			if (b == stage.bulletTail)
+			{
+				stage.bulletTail = prev;
+			}
+
+			prev->next = b->next;
+			free(b);
+			b = prev;
+		}
+
+		prev = b;
+	}
+}
+
+static void doFighters(void) {
+	Entity* e, * prev;
+
+	prev = &stage.fighterHead;
+
+	for (e = stage.fighterHead.next; e != NULL; e = e->next)
+	{
+		e->x += e->dx;
+		e->y += e->dy;
+
+		if (e != player && e->x < -e->w)
+		{
+			if (e == stage.fighterTail)
+			{
+				stage.fighterTail = prev;
+			}
+
+			prev->next = e->next;
+			free(e);
+			e = prev;
+		}
+
+		prev = e;
+	}
+
+}
+
+
+static void spawnEnemies(void)
+{
+	Entity* enemy;
+
+	if (--enemySpawnTimer <= 0)
+	{
+		enemy = malloc(sizeof(Entity));
+		memset(enemy, 0, sizeof(Entity));
+		stage.fighterTail->next = enemy;
+		stage.fighterTail = enemy;
+
+		enemy->x = SCREEN_WIDTH;
+		enemy->y = rand() % SCREEN_HEIGHT;
+		enemy->texture = enemyTexture;
+		SDL_QueryTexture(enemy->texture, NULL, NULL, &enemy->w, &enemy->h);
+
+		enemy->dx = -(2 + (rand() % 4));
+
+		enemySpawnTimer = 30 + (rand() % 60);
+	}
+}
+
+
+static void drawFighters(void)
+{
+	Entity* e;
+
+	for (e = stage.fighterHead.next; e != NULL; e = e->next)
+	{
+		blit(e->texture, e->x, e->y);
+	}
+}
+
+
+static void logic(void) {
+	doPlayer();
+
+	doFighters();
+
+	doBullets();
+
+	spawnEnemies();
+}
+
+
+
+static void initPlayer() {
+	player = (Entity *)malloc(sizeof(Entity));
+	memset(player, 0, sizeof(Entity)); //Debug this
+	stage.fighterTail->next = player;
+	stage.fighterTail = player;
+
+	player->x = 100;
+	player->y = 100;
+
+	char fileName[] = "res/gfx/player.png";
+	player->texture = loadTexture(fileName);
+	SDL_QueryTexture(player->texture, NULL, NULL, &player->w, &player->h);
+	std::cout << "End of initPlayer" << std::endl;
+
+}
+
+
+
+void initStage(void) {
+	app.delegate.logic = logic;
+	app.delegate.draw = draw;
+
+	memset(&stage, 0, sizeof(Stage));
+	stage.fighterTail = &stage.fighterHead;
+	stage.bulletTail = &stage.bulletHead;
+
+	initPlayer();
+
+	char fileName[] = "res/gfx/bullet.png";
+
+	bulletTexture = loadTexture(fileName);
+
+	enemySpawnTimer = 0;
+
+}
+
+static void capFrameRate(long* then, float* remainder) {
+	long wait, frameTime;
+
+	wait = 16 + *remainder;
+
+	*remainder -= (int)*remainder;
+
+	frameTime = SDL_GetTicks() - *then;
+
+	wait -= frameTime;
+
+	if (wait < 1) {
+		wait = 1;
+	}
+
+	SDL_Delay(wait);
+
+	*remainder += 0.667;
+
+	*then = SDL_GetTicks();
+
+	std::cout << "End of capFrameRate " << std::endl;
+
+
+}
 
 int main(int argc, char* argv[]) {
-	
-	memset(&app, 0, sizeof(App));
-	memset(&player, 0, sizeof(Entity));
-	memset(&bullet, 0, sizeof(bullet));
+	long then;
+	float remainder;
 
+	std::cout << &app << std::endl;
+
+	memset(&app, 0, sizeof(App));
 
 	initSDL();
 
-	player.x = 100;
-	player.y = 100;
+	atexit(SDL_Quit);
 
-	char playerSprite[] = "res/gfx/spaceship.png";
-	char bulletSprite[] = "res/gfx/bullet.png";
 
-	player.texture = loadTexture(playerSprite);
-	bullet.texture = loadTexture(bulletSprite);
+	initStage();
 
+	then = SDL_GetTicks();
+	
+	remainder = 0;
 
 	while (1) {
 		prepareScene();
 
 		doInput();
 
-		player.x += player.dx;
-		player.y += player.dy;
+		app.delegate.logic();
 
-		if (app.up) {
-			player.y -= 4;
-		}
-		if (app.down) {
-			player.y += 4;
-		}
-		if (app.left) {
-			player.x -= 4;
-		}
-		if (app.right) {
-			player.x += 4;
-		}
-		if (app.fire && bullet.health == 0) {
-			bullet.x = player.x;
-			bullet.y = player.y;
-			bullet.dx = 16;
-			bullet.dy = 0;
-			bullet.health = 1;
-		}
+		app.delegate.draw();
 
-		bullet.x += bullet.dx;
-		bullet.y += bullet.dy;
+		prepareScene();
 
-		if (bullet.x > SCREEN_WIDTH) {
-			bullet.health = 0;
-		}
-
-		blit(player.texture, player.x, player.y);
-
-		if (bullet.health > 0) {
-			blit(bullet.texture, bullet.x, bullet.y);
-		}
-
-		presentScene();
-
-		SDL_Delay(16);
+		capFrameRate(&then, &remainder);
 	}
 
 	return 0;
